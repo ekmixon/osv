@@ -48,8 +48,7 @@ def populate_indices(bug):
   bug['has_affected'] = bool(bug.get('affected'))
 
   search_indices = []
-  project = bug.get('project')
-  if project:
+  if project := bug.get('project'):
     search_indices.append(project)
 
   search_indices.append(bug.key.id_or_name)

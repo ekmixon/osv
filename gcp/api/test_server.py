@@ -50,13 +50,12 @@ def start_backend(port, log_path):
   env = os.environ.copy()
   env['GOOGLE_CLOUD_PROJECT'] = _GCP_PROJECT
 
-  backend_proc = subprocess.Popen(
+  return subprocess.Popen(
       [sys.executable, 'server.py', f'--port={port}'],
       env=env,
       stdout=log_handle,
-      stderr=subprocess.STDOUT)
-
-  return backend_proc
+      stderr=subprocess.STDOUT,
+  )
 
 
 def get_cloudbuild_esp_host():
@@ -96,32 +95,33 @@ def start_esp(port, backend_port, service_account_path, log_path):
     network = '--network=host'
     host = 'localhost'
 
-  esp_proc = subprocess.Popen([
-      'docker',
-      'run',
-      '--privileged',
-      '--name',
-      'esp',
-      network,
-      '--rm',
-      '-v',
-      f'{service_account_dir}:/esp',
-      f'--publish={port}',
-      'gcr.io/endpoints-release/endpoints-runtime:2',
-      '--disable_tracing',
-      '--service=api-test.osv.dev',
-      '--rollout_strategy=managed',
-      f'--listener_port={port}',
-      f'--backend=grpc://{host}:{backend_port}',
-      f'--service_account_key=/esp/{service_account_name}',
-      '--non_gcp',
-      '--enable_debug',
-      '--transcoding_preserve_proto_field_names',
-      '--envoy_connection_buffer_limit_bytes=10485760',
-  ],
-                              stdout=log_handle,
-                              stderr=subprocess.STDOUT)
-  return esp_proc
+  return subprocess.Popen(
+      [
+          'docker',
+          'run',
+          '--privileged',
+          '--name',
+          'esp',
+          network,
+          '--rm',
+          '-v',
+          f'{service_account_dir}:/esp',
+          f'--publish={port}',
+          'gcr.io/endpoints-release/endpoints-runtime:2',
+          '--disable_tracing',
+          '--service=api-test.osv.dev',
+          '--rollout_strategy=managed',
+          f'--listener_port={port}',
+          f'--backend=grpc://{host}:{backend_port}',
+          f'--service_account_key=/esp/{service_account_name}',
+          '--non_gcp',
+          '--enable_debug',
+          '--transcoding_preserve_proto_field_names',
+          '--envoy_connection_buffer_limit_bytes=10485760',
+      ],
+      stdout=log_handle,
+      stderr=subprocess.STDOUT,
+  )
 
 
 def start(service_account_path, port=_ESP_PORT, backend_port=_BACKEND_PORT):

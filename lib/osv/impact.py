@@ -116,29 +116,28 @@ class RepoAnalyzer:
       # Check all branches for cherry picked regress/fix commits (sorted for
       # determinism).
       branches = sorted(repo.branches.remote)
-    else:
-      if limit_commits:
-        for limit_commit in limit_commits:
-          current_branches = _branches_with_commit(repo, limit_commit)
-          for branch in current_branches:
-            branch_to_limit[branch] = limit_commit
+    elif limit_commits:
+      for limit_commit in limit_commits:
+        current_branches = _branches_with_commit(repo, limit_commit)
+        for branch in current_branches:
+          branch_to_limit[branch] = limit_commit
 
-          branches.extend(current_branches)
-      elif fix_commits:
-        # TODO(ochang): Remove this check. This behaviour should only be keyed
-        # on `limit_commits`.
-        # If not detecting cherry picks, take only branches that contain the fix
-        # commit. Otherwise we may have false positives.
-        for fix_commit in fix_commits:
-          branches.extend(_branches_with_commit(repo, fix_commit))
-      elif regress_commits:
-        # If only a regress commit is available, we need to find all branches
-        # that it reaches.
-        for regress_commit in regress_commits:
-          branches.extend(_branches_with_commit(repo, regress_commit))
+        branches.extend(current_branches)
+    elif fix_commits:
+      # TODO(ochang): Remove this check. This behaviour should only be keyed
+      # on `limit_commits`.
+      # If not detecting cherry picks, take only branches that contain the fix
+      # commit. Otherwise we may have false positives.
+      for fix_commit in fix_commits:
+        branches.extend(_branches_with_commit(repo, fix_commit))
+    elif regress_commits:
+      # If only a regress commit is available, we need to find all branches
+      # that it reaches.
+      for regress_commit in regress_commits:
+        branches.extend(_branches_with_commit(repo, regress_commit))
 
     for branch in branches:
-      ref = 'refs/remotes/' + branch
+      ref = f'refs/remotes/{branch}'
 
       # Get the earliest equivalent commit in the regression range.
       equivalent_regress_commit = None
@@ -257,12 +256,12 @@ def get_commit_and_tag_list(repo,
                             include_end=True,
                             limit_commit=None):
   """Given a commit range, return the list of commits and tags in the range."""
-  if limit_commit:
-    if str(repo.merge_base(end_commit, limit_commit)) == limit_commit:
-      # Limit commit is an earlier ancestor, so use that as the end of the
-      # range instead.
-      include_end = False
-      end_commit = limit_commit
+  if (limit_commit
+      and str(repo.merge_base(end_commit, limit_commit)) == limit_commit):
+    # Limit commit is an earlier ancestor, so use that as the end of the
+    # range instead.
+    include_end = False
+    end_commit = limit_commit
 
   logging.info('Getting commits %s..%s', start_commit, end_commit)
   try:
@@ -335,22 +334,17 @@ def _throttled_delete(to_delete):
 def update_affected_commits(bug_id, commits, public):
   """Update affected commits."""
   to_put = []
-  to_delete = []
-
   for commit in commits:
     affected_commit = models.AffectedCommit(
-        id=bug_id + '-' + commit, bug_id=bug_id, commit=commit, public=public)
+        id=f'{bug_id}-{commit}', bug_id=bug_id, commit=commit, public=public)
 
     to_put.append(affected_commit)
 
-  # Delete any affected commits that no longer apply. This can happen in cases
-  # where a FixResult comes in later and we had previously marked a commit prior
-  # to the fix commit as being affected by a vulnerability.
-  for existing in models.AffectedCommit.query(
-      models.AffectedCommit.bug_id == bug_id):
-    if existing.commit not in commits:
-      to_delete.append(existing.key)
-
+  to_delete = [
+      existing.key for existing in models.AffectedCommit.query(
+          models.AffectedCommit.bug_id == bug_id)
+      if existing.commit not in commits
+  ]
   _throttled_put(to_put)
   _throttled_delete(to_delete)
 
@@ -364,10 +358,8 @@ def enumerate_versions_pre_0_8(package, ecosystem, affected_ranges):
       if not affected_range.introduced and not affected_range.fixed:
         continue
 
-      current_versions = ecosystem.enumerate_versions(package,
-                                                      affected_range.introduced,
-                                                      affected_range.fixed)
-      if current_versions:
+      if current_versions := ecosystem.enumerate_versions(
+          package, affected_range.introduced, affected_range.fixed):
         versions.update(current_versions)
 
   versions = list(versions)
@@ -557,9 +549,7 @@ def _analyze_pre_0_8(vulnerability,
     _analyze_git_ranges_pre_0_8(repo_analyzer, checkout_path, vulnerability,
                                 range_collectors, new_versions, commits)
 
-  # Enumerate ECOSYSTEM and SEMVER ranges.
-  ecosystem_helpers = ecosystems.get(vulnerability.package.ecosystem)
-  if ecosystem_helpers:
+  if ecosystem_helpers := ecosystems.get(vulnerability.package.ecosystem):
     versions = enumerate_versions_pre_0_8(vulnerability.package.name,
                                           ecosystem_helpers,
                                           vulnerability.affects.ranges)
@@ -621,9 +611,8 @@ def analyze(vulnerability,
     for affected_range in affected_package.ranges:
       if affected_range.type in (vulnerability_pb2.Range.ECOSYSTEM,
                                  vulnerability_pb2.Range.SEMVER):
-        # Enumerate ECOSYSTEM and SEMVER ranges.
-        ecosystem_helpers = ecosystems.get(affected_package.package.ecosystem)
-        if ecosystem_helpers:
+        if ecosystem_helpers := ecosystems.get(
+            affected_package.package.ecosystem):
           versions.extend(
               enumerate_versions(affected_package.package.name,
                                  ecosystem_helpers, affected_range))
@@ -649,13 +638,13 @@ def analyze(vulnerability,
 
       # Apply changes.
       for introduced in new_introduced:
-        if (not any(
-            event.introduced == introduced for event in affected_range.events)):
+        if all(
+            event.introduced != introduced for event in affected_range.events):
           has_changes = True
           affected_range.events.add(introduced=introduced)
 
       for fixed in new_fixed:
-        if not any(event.fixed == fixed for event in affected_range.events):
+        if all(event.fixed != fixed for event in affected_range.events):
           has_changes = True
           affected_range.events.add(fixed=fixed)
 

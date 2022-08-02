@@ -237,133 +237,143 @@ class IntegrationTests(unittest.TestCase):
 
   def test_get(self):
     """Test getting a vulnerability."""
-    response = requests.get(_api() + '/v1/vulns/OSV-2020-744')
+    response = requests.get(f'{_api()}/v1/vulns/OSV-2020-744')
     self.assert_vuln_equal(self._VULN_744, response.json())
 
   def test_get_with_multiple(self):
     """Test getting a vulnerability with multiple packages."""
-    response = requests.get(_api() + '/v1/vulns/GO-2020-0015')
+    response = requests.get(f'{_api()}/v1/vulns/GO-2020-0015')
     self.assert_vuln_equal(self._VULN_GO_2020_0015, response.json())
 
   def test_get_invalid(self):
     """Test getting an invalid vulnerability."""
-    response = requests.get(_api() + '/v1/vulns/OSV-2020-2258')
+    response = requests.get(f'{_api()}/v1/vulns/OSV-2020-2258')
     self.assert_vuln_equal(self._VULN_2258, response.json())
 
   def test_query_commit(self):
     """Test querying by commit."""
     response = requests.post(
-        _api() + '/v1/query',
+        f'{_api()}/v1/query',
         data=json.dumps({
             'commit': '233cb49903fa17637bd51f4a16b4ca61e0750f24',
-        }))
+        }),
+    )
     self.assert_results_equal({'vulns': [self._VULN_744]}, response.json())
 
   def test_query_version(self):
     """Test querying by version."""
     response = requests.post(
-        _api() + '/v1/query',
+        f'{_api()}/v1/query',
         data=json.dumps({
             'version': '2.1.2rc',
             'package': {
                 'name': 'mruby',
                 'ecosystem': 'OSS-Fuzz',
-            }
-        }))
+            },
+        }),
+    )
     self.assert_results_equal({'vulns': [self._VULN_744]}, response.json())
 
     response = requests.post(
-        _api() + '/v1/query',
+        f'{_api()}/v1/query',
         data=json.dumps({
             'version': '2.1.2-rc',
             'package': {
                 'name': 'mruby',
-            }
-        }))
+            },
+        }),
+    )
     self.assert_results_equal({'vulns': [self._VULN_744]}, response.json())
 
   def test_query_semver(self):
     """Test query by SemVer."""
     response = requests.post(
-        _api() + '/v1/query',
+        f'{_api()}/v1/query',
         data=json.dumps({
             'version': '0.0.0-2017a',
             'package': {
                 'name': 'github.com/nanobox-io/golang-nanoauth',
                 'ecosystem': 'Go',
-            }
-        }))
+            },
+        }),
+    )
     self.assert_results_equal({'vulns': [self._VULN_GO_2020_0004]},
                               response.json())
 
     response = requests.post(
-        _api() + '/v1/query',
+        f'{_api()}/v1/query',
         data=json.dumps({
             'version': '0.0.0-2017a',
             'package': {
                 'name': 'github.com/nanobox-io/golang-nanoauth',
-            }
-        }))
+            },
+        }),
+    )
     self.assert_results_equal({'vulns': [self._VULN_GO_2020_0004]},
                               response.json())
 
     response = requests.post(
-        _api() + '/v1/query',
+        f'{_api()}/v1/query',
         data=json.dumps({
             'version': '0.0.0-20160722212129-ac0cc4484ad4',
             'package': {
                 'name': 'github.com/nanobox-io/golang-nanoauth',
                 'ecosystem': 'Go',
-            }
-        }))
+            },
+        }),
+    )
     self.assert_results_equal({'vulns': [self._VULN_GO_2020_0004]},
                               response.json())
 
     response = requests.post(
-        _api() + '/v1/query',
+        f'{_api()}/v1/query',
         data=json.dumps({
             'version': '0.0.0-20200131131040-063a3fb69896',
             'package': {
                 'name': 'github.com/nanobox-io/golang-nanoauth',
                 'ecosystem': 'Go',
-            }
-        }))
+            },
+        }),
+    )
     self.assert_results_equal({}, response.json())
 
     response = requests.post(
-        _api() + '/v1/query',
+        f'{_api()}/v1/query',
         data=json.dumps({
             'version': '0.0.0',
             'package': {
                 'name': 'github.com/nanobox-io/golang-nanoauth',
                 'ecosystem': 'Go',
-            }
-        }))
+            },
+        }),
+    )
     self.assert_results_equal({}, response.json())
 
   def test_query_semver_multiple_package(self):
     """Test query by SemVer (with multiple packages)."""
     response = requests.post(
-        _api() + '/v1/query',
+        f'{_api()}/v1/query',
         data=json.dumps({
             'version': '2.4.0',
             'package': {
                 'name': 'gopkg.in/yaml.v2',
                 'ecosystem': 'Go',
-            }
-        }))
+            },
+        }),
+    )
 
     self.assert_results_equal({}, response.json())
 
     response = requests.post(
-        _api() + '/v1/query',
+        f'{_api()}/v1/query',
         data=json.dumps({
             'version': '2.4.0',
             'package': {
                 'name': 'github.com/go-yaml/yaml',
                 'ecosystem': 'Go',
-            }
-        }))
+            },
+        }),
+    )
 
     response_json = response.json()
     self.assertEqual(2, len(response_json['vulns']))
@@ -376,7 +386,7 @@ def print_logs(filename):
   if not os.path.exists(filename):
     return
 
-  print(filename + ':')
+  print(f'{filename}:')
   with open(filename) as f:
     print(f.read())
 

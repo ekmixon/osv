@@ -120,9 +120,8 @@ class Importer:
         continue
 
       ecosystems.add(affected.package.ecosystem)
-      ecosystem_push_topic = _ECOSYSTEM_PUSH_TOPICS.get(
-          affected.package.ecosystem)
-      if ecosystem_push_topic:
+      if ecosystem_push_topic := _ECOSYSTEM_PUSH_TOPICS.get(
+          affected.package.ecosystem):
         self._publisher.publish(
             ecosystem_push_topic,
             data=json.dumps(osv.vulnerability_to_dict(vulnerability)).encode())

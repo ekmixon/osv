@@ -51,44 +51,43 @@ class VersionToken(
     return self.prefix == other.prefix and self.value == other.value
 
   def __lt__(self, other):
-    if self.prefix == other.prefix:
-      # if the prefix is the same, then compare the token:
-      if self.value.isdigit() and other.value.isdigit():
-        # Numeric tokens have the natural order.
-        return int(self.value) < int(other.value)
-      # The spec is unclear, but according to Maven's implementation, numerics
-      # sort after non-numerics, **unless it's a null value**.
-      # https://github.com/apache/maven/blob/965aaa53da5c2d814e94a41d37142d0d6830375d/maven-artifact/src/main/java/org/apache/maven/artifact/versioning/ComparableVersion.java#L443
-      if self.value.isdigit() and not self.is_null:
-        return False
+    if self.prefix != other.prefix:
+      # else ".qualifier" < "-qualifier" < "-number" < ".number"
+      return qualifier_order(self) < qualifier_order(other)
+    # if the prefix is the same, then compare the token:
+    if self.value.isdigit() and other.value.isdigit():
+      # Numeric tokens have the natural order.
+      return int(self.value) < int(other.value)
+    # The spec is unclear, but according to Maven's implementation, numerics
+    # sort after non-numerics, **unless it's a null value**.
+    # https://github.com/apache/maven/blob/965aaa53da5c2d814e94a41d37142d0d6830375d/maven-artifact/src/main/java/org/apache/maven/artifact/versioning/ComparableVersion.java#L443
+    if self.value.isdigit() and not self.is_null:
+      return False
 
-      if other.value.isdigit() and not other.is_null:
-        return True
+    if other.value.isdigit() and not other.is_null:
+      return True
 
-      # Non-numeric tokens ("qualifiers") have the alphabetical order, except
-      # for the following tokens which come first in _KEYWORD_ORDER.
-      #
-      # The spec is unclear, but according to Maven's implementation, unknown
-      # qualifiers sort after known qualifiers:
-      # https://github.com/apache/maven/blob/965aaa53da5c2d814e94a41d37142d0d6830375d/maven-artifact/src/main/java/org/apache/maven/artifact/versioning/ComparableVersion.java#L423
-      try:
-        left_idx = _KEYWORD_ORDER.index(self.value)
-      except ValueError:
-        left_idx = len(_KEYWORD_ORDER)
+    # Non-numeric tokens ("qualifiers") have the alphabetical order, except
+    # for the following tokens which come first in _KEYWORD_ORDER.
+    #
+    # The spec is unclear, but according to Maven's implementation, unknown
+    # qualifiers sort after known qualifiers:
+    # https://github.com/apache/maven/blob/965aaa53da5c2d814e94a41d37142d0d6830375d/maven-artifact/src/main/java/org/apache/maven/artifact/versioning/ComparableVersion.java#L423
+    try:
+      left_idx = _KEYWORD_ORDER.index(self.value)
+    except ValueError:
+      left_idx = len(_KEYWORD_ORDER)
 
-      try:
-        right_idx = _KEYWORD_ORDER.index(other.value)
-      except ValueError:
-        right_idx = len(_KEYWORD_ORDER)
+    try:
+      right_idx = _KEYWORD_ORDER.index(other.value)
+    except ValueError:
+      right_idx = len(_KEYWORD_ORDER)
 
-      if left_idx == len(_KEYWORD_ORDER) and right_idx == len(_KEYWORD_ORDER):
-        # Both are unknown qualifiers. Just do a lexical comparison.
-        return self.value < other.value
+    if left_idx == len(_KEYWORD_ORDER) and right_idx == len(_KEYWORD_ORDER):
+      # Both are unknown qualifiers. Just do a lexical comparison.
+      return self.value < other.value
 
-      return left_idx < right_idx
-
-    # else ".qualifier" < "-qualifier" < "-number" < ".number"
-    return qualifier_order(self) < qualifier_order(other)
+    return left_idx < right_idx
 
 
 class Version:
@@ -98,11 +97,7 @@ class Version:
     self.tokens = []
 
   def __str__(self):
-    result = ''
-    for token in self.tokens:
-      result += token.prefix + token.value
-
-    return result
+    return ''.join(token.prefix + token.value for token in self.tokens)
 
   def __eq__(self, other):
     return self.tokens == other.tokens
@@ -147,13 +142,7 @@ class Version:
     # Split and keep the delimiter.
     tokens = re.split(r'([-.])', str_version)
     for i in range(0, len(tokens), 2):
-      if i == 0:
-        # First token has no preceding prefix.
-        prefix = ''
-      else:
-        # Preceding prefix.
-        prefix = tokens[i - 1]
-
+      prefix = '' if i == 0 else tokens[i - 1]
       # A transition between digits and characters is equivalent to a hyphen.
       # According to Maven's implementation: any non-digit is a "character":
       # https://github.com/apache/maven/blob/965aaa53da5c2d814e94a41d37142d0d6830375d/maven-artifact/src/main/java/org/apache/maven/artifact/versioning/ComparableVersion.java#L627

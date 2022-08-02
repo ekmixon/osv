@@ -49,11 +49,7 @@ def _get_counter(year=None):
 
   key = ndb.Key(osv.IDCounter, year)
 
-  counter = key.get()
-  if counter:
-    return counter
-
-  return osv.IDCounter(id=year, next_id=1)
+  return counter if (counter := key.get()) else osv.IDCounter(id=year, next_id=1)
 
 
 def make_affected_commits_public(bug):
@@ -78,7 +74,7 @@ def get_monorail_service_account():
   return json.loads(response.payload.data.decode())
 
 
-@blueprint.route(_CRON_ROUTE + '/make-bugs-public')
+@blueprint.route(f'{_CRON_ROUTE}/make-bugs-public')
 def make_bugs_public():
   """Mark bugs public."""
   if not request.headers.get('X-Appengine-Cron'):
@@ -115,7 +111,7 @@ def make_bugs_public():
   return 'done'
 
 
-@blueprint.route(_CRON_ROUTE + '/process-results')
+@blueprint.route(f'{_CRON_ROUTE}/process-results')
 def process_results():
   """Generate impact requests."""
   if not request.headers.get('X-Appengine-Cron'):
@@ -134,31 +130,26 @@ def process_results():
     if not fixed_result or not fixed_result.commit:
       logging.info('Fixed result does not exist for %s.', key_id)
 
-    bug = osv.Bug.query(osv.Bug.source_id == key_id).get()
-    if bug:
+    if bug := osv.Bug.query(osv.Bug.source_id == key_id).get():
       logging.info('Bug already exists for %s.', key_id)
       continue
 
     if regress_result.issue_id:
-      bug = osv.Bug.query(osv.Bug.issue_id == regress_result.issue_id).get()
-      if bug:
+      if bug := osv.Bug.query(
+          osv.Bug.issue_id == regress_result.issue_id).get():
         logging.info('Bug already exists for issue %s.',
                      regress_result.issue_id)
         continue
 
     # Get ID counter for the year.
-    if regress_result.timestamp:
-      id_year = regress_result.timestamp.year
-    else:
-      id_year = None
-
+    id_year = regress_result.timestamp.year if regress_result.timestamp else None
     counter = counters.get(id_year)
     if not counter:
       counter = _get_counter(id_year)
       counters[id_year] = counter
 
     try:
-      cur_id = 'OSV-{}-{}'.format(counter.key.id(), counter.next_id)
+      cur_id = f'OSV-{counter.key.id()}-{counter.next_id}'
       logging.info('Allocating %s.', cur_id)
       counter.next_id += 1
 
@@ -185,7 +176,7 @@ def process_results():
   return 'done'
 
 
-@blueprint.route(_CRON_ROUTE + '/backup')
+@blueprint.route(f'{_CRON_ROUTE}/backup')
 def backup():
   """Create a Datastore backup."""
   if not request.headers.get('X-Appengine-Cron'):

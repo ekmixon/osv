@@ -36,21 +36,17 @@ class VCSViewer(object):
 
   def get_source_url_for_revision(self, revision):
     """Return source revision url given a url and revision."""
-    if not self.VCS_REVISION_SUB:
-      return None
-
-    return self.get_mapped_url(self.VCS_REVISION_SUB, revision=revision)
+    return (self.get_mapped_url(self.VCS_REVISION_SUB, revision=revision)
+            if self.VCS_REVISION_SUB else None)
 
   def get_source_url_for_revision_diff(self, start_revision, end_revision):
     """Return source revision diff url given a url and revision."""
-    if not self.VCS_REVISION_DIFF_SUB:
-      return None
-
-    return self.get_mapped_url(
+    return (self.get_mapped_url(
         self.VCS_REVISION_DIFF_SUB,
         start_revision=start_revision,
         end_revision=end_revision,
-        range_limit=RANGE_LIMIT)
+        range_limit=RANGE_LIMIT,
+    ) if self.VCS_REVISION_DIFF_SUB else None)
 
 
 class FreeDesktopVCS(VCSViewer):
@@ -98,8 +94,5 @@ VCS_LIST = [
 
 def get_vcs_viewer_for_url(url):
   """Return a VCS instance given an input url."""
-  for vcs in VCS_LIST:
-    if vcs.VCS_URL_REGEX.match(url):
-      return vcs(url)
-
-  return None
+  return next((vcs(url) for vcs in VCS_LIST if vcs.VCS_URL_REGEX.match(url)),
+              None)

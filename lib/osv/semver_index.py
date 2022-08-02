@@ -25,10 +25,7 @@ def _strip_leading_v(version):
   """Strip leading v from the version, if any."""
   # Versions starting with "v" aren't valid SemVer, but we handle them just in
   # case.
-  if version.startswith('v'):
-    return version[1:]
-
-  return version
+  return version[1:] if version.startswith('v') else version
 
 
 def coerce(version):
@@ -36,10 +33,7 @@ def coerce(version):
   version = _strip_leading_v(version)
   version_pattern = re.compile(r'^(\d+)(\.\d+)?(\.\d+)?$')
   match = version_pattern.match(version)
-  if not match:
-    return version
-
-  return match.group(1) + (match.group(2) or '.0') + (match.group(3) or '.0')
+  return match[1] + (match[2] or '.0') + (match[3] or '.0') if match else version
 
 
 def is_valid(version):
@@ -71,10 +65,7 @@ def normalize(version):
   #
   # Normalization: Pad the components with '0' to allow for lexical ordering of
   # numbers.
-  core_parts = '{}.{}.{}'.format(
-      str(version.major).rjust(_PAD_WIDTH, '0'),
-      str(version.minor).rjust(_PAD_WIDTH, '0'),
-      str(version.patch).rjust(_PAD_WIDTH, '0'))
+  core_parts = f"{str(version.major).rjust(_PAD_WIDTH, '0')}.{str(version.minor).rjust(_PAD_WIDTH, '0')}.{str(version.patch).rjust(_PAD_WIDTH, '0')}"
 
   # 3. When major, minor, and patch are equal, a pre-release version has lower
   # precedence than a normal version:
@@ -103,7 +94,7 @@ def normalize(version):
     else:
       # 2. Identifiers with letters or hyphens are compared lexically in ASCII
       # sort order.
-      pre_components.append('1' + component)
+      pre_components.append(f'1{component}')
 
   # 4. A larger set of pre-release fields has a higher precedence than a smaller
   # set, if all of the preceding identifiers are equal.

@@ -141,13 +141,11 @@ class Maven(Ecosystem):
           'wt': 'json',
           'start': start
       }
-      url = self._API_PACKAGE_URL + '?' + urllib.parse.urlencode(query)
+      url = f'{self._API_PACKAGE_URL}?{urllib.parse.urlencode(query)}'
       response = requests.get(url)
       response = response.json()['response']
 
-      for result in response['docs']:
-        versions.append(result['v'])
-
+      versions.extend(result['v'] for result in response['docs'])
       if len(versions) >= response['numFound']:
         break
 

@@ -560,9 +560,10 @@ class UpdateTest(unittest.TestCase, tests.ExpectationTest(TEST_DATA_DIR)):
         id='source',
         name='source',
         db_prefix='BLAH-',
-        repo_url='file://' + self.remote_source_repo_path,
+        repo_url=f'file://{self.remote_source_repo_path}',
         editable=True,
-        repo_username='')
+        repo_username='',
+    )
     self.source_repo.put()
 
     osv.Bug(

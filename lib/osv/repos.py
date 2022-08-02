@@ -59,8 +59,7 @@ class GitRemoteCallback(pygit2.RemoteCallbacks):
 
 def _git_mirror(git_url):
   """Get git mirror. If no mirror exists, return the git URL as is."""
-  mirror = _GIT_MIRRORS.get(git_url.rstrip('/'))
-  if mirror:
+  if mirror := _GIT_MIRRORS.get(git_url.rstrip('/')):
     logging.info('Using mirror %s for git URL %s.', mirror, git_url)
     return mirror
 
@@ -69,7 +68,7 @@ def _git_mirror(git_url):
 
 def _checkout_branch(repo, branch):
   """Check out a branch."""
-  remote_branch = repo.lookup_branch('origin/' + branch,
+  remote_branch = repo.lookup_branch(f'origin/{branch}',
                                      pygit2.GIT_BRANCH_REMOTE)
   local_branch = repo.lookup_branch(branch, pygit2.GIT_BRANCH_LOCAL)
   if not local_branch:

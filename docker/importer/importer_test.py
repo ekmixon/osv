@@ -60,9 +60,10 @@ class ImporterTest(unittest.TestCase, tests.ExpectationTest(TEST_DATA_DIR)):
         id='oss-fuzz',
         name='oss-fuzz',
         db_prefix='OSV-',
-        repo_url='file://' + self.remote_source_repo_path,
+        repo_url=f'file://{self.remote_source_repo_path}',
         repo_username='',
-        ignore_patterns=['.*IGNORE.*'])
+        ignore_patterns=['.*IGNORE.*'],
+    )
     self.source_repo.put()
 
   def tearDown(self):
@@ -207,8 +208,9 @@ class ImporterTest(unittest.TestCase, tests.ExpectationTest(TEST_DATA_DIR)):
         type=osv.SourceRepositoryType.GIT,
         id='source',
         name='source',
-        repo_url='file://' + self.remote_source_repo_path,
-        repo_username='').put()
+        repo_url=f'file://{self.remote_source_repo_path}',
+        repo_username='',
+    ).put()
     osv.Bug(
         db_id='OSV-2021-1337',
         affected_packages=[
@@ -327,8 +329,9 @@ class ImporterTest(unittest.TestCase, tests.ExpectationTest(TEST_DATA_DIR)):
         type=osv.SourceRepositoryType.GIT,
         id='PyPI',
         name='PyPI',
-        repo_url='file://' + self.remote_source_repo_path,
-        repo_username='')
+        repo_url=f'file://{self.remote_source_repo_path}',
+        repo_username='',
+    )
     self.source_repo.put()
     self.mock_repo.add_file(
         'PYSEC-2021-1.yaml', 'id: PYSEC-2021-1\n'

@@ -223,10 +223,7 @@ def set_bug_attributes(bug, regress_result, fix_result):
   bug.reference_url_types = {}
 
   for reference_url in reference_urls:
-    if OSS_FUZZ_ISSUE_URL in reference_url:
-      link_type = 'REPORT'
-    else:
-      link_type = 'WEB'
+    link_type = 'REPORT' if OSS_FUZZ_ISSUE_URL in reference_url else 'WEB'
     bug.reference_url_types[reference_url] = link_type
 
   bug.regressed = regress_result.commit or ''

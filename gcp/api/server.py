@@ -124,10 +124,7 @@ def query_by_commit(commit, to_response=bug_to_response):
   """Query by commit."""
   query = osv.AffectedCommit.query(osv.AffectedCommit.commit == commit,
                                    osv.AffectedCommit.public == True)  # pylint: disable=singleton-comparison
-  bug_ids = []
-  for affected_commit in query:
-    bug_ids.append(affected_commit.bug_id)
-
+  bug_ids = [affected_commit.bug_id for affected_commit in query]
   return _get_bugs(bug_ids, to_response=to_response)
 
 
@@ -208,10 +205,10 @@ def serve(port):
   """Configures and runs the bookstore API server."""
   server = grpc.server(futures.ThreadPoolExecutor(max_workers=10))
   osv_service_v1_pb2_grpc.add_OSVServicer_to_server(OSVServicer(), server)
-  server.add_insecure_port('[::]:{}'.format(port))
+  server.add_insecure_port(f'[::]:{port}')
   server.start()
 
-  print('Listening on port {}'.format(port))
+  print(f'Listening on port {port}')
   try:
     while True:
       time.sleep(3600)

@@ -89,23 +89,25 @@ class MockRepo:
 
 def start_datastore_emulator():
   """Starts Datastore emulator."""
-  os.environ['DATASTORE_EMULATOR_HOST'] = 'localhost:' + str(
-      _DATASTORE_EMULATOR_PORT)
+  os.environ[
+      'DATASTORE_EMULATOR_HOST'] = f'localhost:{str(_DATASTORE_EMULATOR_PORT)}'
   os.environ['DATASTORE_PROJECT_ID'] = TEST_PROJECT_ID
   os.environ['GOOGLE_CLOUD_PROJECT'] = TEST_PROJECT_ID
-  proc = subprocess.Popen([
-      'gcloud',
-      'beta',
-      'emulators',
-      'datastore',
-      'start',
-      '--consistency=1.0',
-      '--host-port=localhost:' + str(_DATASTORE_EMULATOR_PORT),
-      '--project=' + TEST_PROJECT_ID,
-      '--no-store-on-disk',
-  ],
-                          stdout=subprocess.PIPE,
-                          stderr=subprocess.STDOUT)
+  proc = subprocess.Popen(
+      [
+          'gcloud',
+          'beta',
+          'emulators',
+          'datastore',
+          'start',
+          '--consistency=1.0',
+          f'--host-port=localhost:{str(_DATASTORE_EMULATOR_PORT)}',
+          f'--project={TEST_PROJECT_ID}',
+          '--no-store-on-disk',
+      ],
+      stdout=subprocess.PIPE,
+      stderr=subprocess.STDOUT,
+  )
 
   _wait_for_emulator_ready(proc, 'datastore', _DATASTORE_READY_INDICATOR)
   return proc
@@ -144,8 +146,7 @@ def _wait_for_emulator_ready(proc,
 
 def reset_emulator():
   """Resets emulator."""
-  resp = requests.post(
-      'http://localhost:{}/reset'.format(_DATASTORE_EMULATOR_PORT))
+  resp = requests.post(f'http://localhost:{_DATASTORE_EMULATOR_PORT}/reset')
   resp.raise_for_status()
 
 

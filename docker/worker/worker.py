@@ -65,8 +65,7 @@ class LogFilter(logging.Filter):
 
   def filter(self, record):
     """Add metadata to record."""
-    source_id = getattr(_state, 'source_id', None)
-    if source_id:
+    if source_id := getattr(_state, 'source_id', None):
       record.extras = {
           'source_id': source_id,
       }
@@ -91,9 +90,8 @@ class GkeLogHandler(logging.StreamHandler):
         'severity': record.levelname,
     }
 
-    extras = getattr(record, 'extras', None)
-    if extras:
-      payload.update(extras)
+    if extras := getattr(record, 'extras', None):
+      payload |= extras
 
     return json.dumps(payload)
 
@@ -177,12 +175,10 @@ def mark_bug_invalid(message):
 
 def get_source_id(message):
   """Get message ID."""
-  source_id = message.attributes['source_id']
-  if source_id:
+  if source_id := message.attributes['source_id']:
     return source_id
 
-  testcase_id = message.attributes['testcase_id']
-  if testcase_id:
+  if testcase_id := message.attributes['testcase_id']:
     return oss_fuzz.SOURCE_PREFIX + testcase_id
 
   return None
@@ -208,10 +204,10 @@ def add_fix_information(vulnerability, bug, fix_result):
         # commit, add it.
         # Use "in" for the introduced comparison because `bug.regressed` could
         # be a commit range for OSS-Fuzz bugs.
-        if (any(event.introduced and event.introduced in bug.regressed
-                for event in affected_range.events) and
-            not any(event.fixed == fix_commit
-                    for event in affected_range.events)):
+        if any(event.introduced and event.introduced in bug.regressed
+               for event in affected_range.events) and all(
+                   event.fixed != fix_commit
+                   for event in affected_range.events):
           added_fix = True
           affected_range.events.add(fixed=fix_commit)
 
@@ -348,11 +344,8 @@ class TaskRunner:
   def _analyze_vulnerability(self, source_repo, repo, vulnerability, path,
                              original_sha256):
     """Analyze vulnerability and push new changes."""
-    # Add OSS-Fuzz
-    bug = osv.Bug.get_by_id(vulnerability.id)
-    if bug:
-      fix_result = osv.FixResult.get_by_id(bug.source_id)
-      if fix_result:
+    if bug := osv.Bug.get_by_id(vulnerability.id):
+      if fix_result := osv.FixResult.get_by_id(bug.source_id):
         add_fix_information(vulnerability, bug, fix_result)
 
     result = osv.analyze(

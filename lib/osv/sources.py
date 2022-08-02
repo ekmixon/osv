@@ -57,7 +57,7 @@ def _parse_vulnerability_dict(path):
     if ext in JSON_EXTENSIONS:
       return json.load(f)
 
-    raise RuntimeError('Unknown format ' + ext)
+    raise RuntimeError(f'Unknown format {ext}')
 
   return None
 
@@ -88,7 +88,7 @@ def parse_vulnerabilities_from_data(data, extension, key_path=None):
   elif extension in JSON_EXTENSIONS:
     data = json.loads(data)
   else:
-    raise RuntimeError('Unknown format ' + extension)
+    raise RuntimeError(f'Unknown format {extension}')
 
   return _parse_vulnerabilities(data, key_path)
 
@@ -153,7 +153,7 @@ def _write_vulnerability_dict(data, output_path):
     elif ext in JSON_EXTENSIONS:
       json.dump(data, f, indent=2)
     else:
-      raise RuntimeError('Unknown format ' + ext)
+      raise RuntimeError(f'Unknown format {ext}')
 
 
 def write_vulnerability(vulnerability, output_path, key_path=None):

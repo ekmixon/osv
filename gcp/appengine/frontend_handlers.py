@@ -155,14 +155,14 @@ def _commit_to_link(repo_url, commit):
   return vcs.get_source_url_for_revision_diff(start, end)
 
 
-@blueprint.route(_BACKEND_ROUTE + '/ecosystems')
+@blueprint.route(f'{_BACKEND_ROUTE}/ecosystems')
 def ecosystems_handler():
   """Get list of ecosystems."""
   query = osv.Bug.query(projection=[osv.Bug.ecosystem], distinct=True)
   return jsonify(sorted([bug.ecosystem[0] for bug in query if bug.ecosystem]))
 
 
-@blueprint.route(_BACKEND_ROUTE + '/query')
+@blueprint.route(f'{_BACKEND_ROUTE}/query')
 def query_handler():
   """Handle a query."""
   search_string = request.args.get('search')
@@ -197,7 +197,7 @@ def query_handler():
   return jsonify(results)
 
 
-@blueprint.route(_BACKEND_ROUTE + '/vulnerability')
+@blueprint.route(f'{_BACKEND_ROUTE}/vulnerability')
 def vulnerability_handler():
   """Handle a vulnerability request."""
   vuln_id = request.args.get('id')

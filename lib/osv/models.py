@@ -35,7 +35,7 @@ def _check_valid_severity(prop, value):
   del prop
 
   if value not in ('LOW', 'MEDIUM', 'HIGH', 'CRITICAL'):
-    raise ValueError('Invalid severity: ' + value)
+    raise ValueError(f'Invalid severity: {value}')
 
 
 def _check_valid_range_type(prop, value):
@@ -43,7 +43,7 @@ def _check_valid_range_type(prop, value):
   del prop
 
   if value not in ('GIT', 'SEMVER', 'ECOSYSTEM'):
-    raise ValueError('Invalid range type: ' + value)
+    raise ValueError(f'Invalid range type: {value}')
 
 
 def _check_valid_event_type(prop, value):
@@ -51,7 +51,7 @@ def _check_valid_event_type(prop, value):
   del prop
 
   if value not in ('introduced', 'fixed', 'limit'):
-    raise ValueError('Invalid event type: ' + value)
+    raise ValueError(f'Invalid event type: {value}')
 
 
 def utcnow():
@@ -286,8 +286,7 @@ class Bug(ndb.Model):
   @classmethod
   def get_by_id(cls, vuln_id, *args, **kwargs):
     """Overridden get_by_id to handle OSV allocated IDs."""
-    result = cls.query(cls.db_id == vuln_id).get()
-    if result:
+    if result := cls.query(cls.db_id == vuln_id).get():
       return result
 
     # TODO(ochang): Remove once all exsting bugs have IDs migrated.
@@ -640,11 +639,10 @@ class Bug(ndb.Model):
 
     references = []
     if self.reference_url_types:
-      for url, url_type in self.reference_url_types.items():
-        references.append(
-            vulnerability_pb2.Reference(
-                url=url, type=vulnerability_pb2.Reference.Type.Value(url_type)))
-
+      references.extend(
+          vulnerability_pb2.Reference(
+              url=url, type=vulnerability_pb2.Reference.Type.Value(url_type))
+          for url, url_type in self.reference_url_types.items())
     result = vulnerability_pb2.Vulnerability(
         id=self.id(),
         published=published,
@@ -722,11 +720,7 @@ class SourceRepository(ndb.Model):
       return False
 
     file_name = os.path.basename(file_path)
-    for pattern in self.ignore_patterns:
-      if re.match(pattern, file_name):
-        return True
-
-    return False
+    return any(re.match(pattern, file_name) for pattern in self.ignore_patterns)
 
   def _pre_put_hook(self):
     """Pre-put hook for validation."""
@@ -751,7 +745,7 @@ def sorted_events(ecosystem, range_type, events):
     ecosystem_helper = ecosystems.get(ecosystem)
 
   if ecosystem_helper is None:
-    raise ValueError('Unsupported ecosystem ' + ecosystem)
+    raise ValueError(f'Unsupported ecosystem {ecosystem}')
 
   # Remove any magic '0' values.
   sorted_copy = []
