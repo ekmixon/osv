@@ -11,5 +11,5 @@ grpcio==1.34.0
 grpcio-tools==1.34.0
 packaging==20.9
 pygit2==1.4.0
-requests==2.25.1
+requests==2.32.0
 semver==2.13.0
